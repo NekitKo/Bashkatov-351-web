@@ -1,4 +1,4 @@
-{% macro form_user(user, l_class=None, l_message_class=None, l_message=None, p_class=None, p_message_class=None, p_message=None, ln_class=None, ln_message_class=None, ln_message=None, fn_class=None, fn_message_class=None, fn_message=None)%}
+{% macro form_user(user, roles, l_class=None, l_message_class=None, l_message=None, p_class=None, p_message_class=None, p_message=None, ln_class=None, ln_message_class=None, ln_message=None, fn_class=None, fn_message_class=None, fn_message=None)%}
 <form method="POST">
   {% if request.endpoint == 'create'%}
   <div class="mb-3">
@@ -9,7 +9,6 @@
       class="form-control {{ l_class }}"
       id="login"
       aria-describedby="loginHelp"
-      required
       value={% if user.login %}{{ user.login }}{% else %}""{% endif %}
     />
     {% if l_class %}
@@ -19,15 +18,14 @@
     {% endif %}
   </div>
   <div class="mb-3">
-    <label for="exampleInputPassword1" class="form-label">Пароль</label>
+    <label for="password1" class="form-label">Пароль</label>
     <input
-      name="password"
+      name="oldpassword"
       type="password"
       class="form-control {{ p_class }}"
       aria-describedby="pHelp"
-      id="exampleInputPassword1"
+      id="oldpassword"
       value={% if user.password %}{{ user.password }}{% else %}""{% endif %}
-      required
     />
     {% if p_class %}
     <div id="pHelp" class="{{ p_message_class }}">
@@ -45,7 +43,6 @@
       id="last_name"
       aria-describedby="lnHelp"
       value={% if user.last_name %}{{ user.last_name }}{% else %}""{% endif %}
-      required
     />
     {% if ln_class %}
     <div id="lnHelp" class="{{ ln_message_class }}">
@@ -62,7 +59,6 @@
       id="first_name"
       aria-describedby="fnHelp"
       value={% if user.first_name %}{{ user.first_name }}{% else %}""{% endif %}
-      required
     />
     {% if fn_class %}
     <div id="fnHelp" class="{{ fn_message_class }}">
@@ -81,7 +77,15 @@
       aria-describedby="loginHelp"
     />
   </div>
-
+  <div class="mb-3">
+    <label for="selroles" class="form-label">Роль</label>
+    <select class="form-select" aria-label="Default select example" id="selroles" name="role_id">
+      <option selected>Не выбрано</option>
+      {% for role in roles %}
+        <option value="{{role.id}}">{{role.name}}</option>
+      {% endfor %}
+    </select>
+  </div>
   <button type="submit" class="btn btn-primary">Сохранить</button>
 </form>
 {% endmacro %}

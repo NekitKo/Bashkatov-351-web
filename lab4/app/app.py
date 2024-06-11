@@ -26,13 +26,26 @@ class User(UserMixin):
         self.id = user_id
         self.login = user_login
 
-
-def password_validation(password: str) -> bool:
-    reg = re.compile(r'''^(?=.*?[a-zа-я])(?=.*?[A-ZА-Я])(?=.*?[0-9])[-A-ZА-Яa-zа-я\d~!?@#$%^&*_+()\[\]{}></\\|"'.,:;]{8,128}$''')
-    if reg.match(password):
-        return True
-    else:
-        return False
+def password_validation(password: str) -> str:
+    re1 = re.compile(r'''^[-A-ZА-Яa-zа-я\d~!?@#$%^&*_+()\[\]{}></\\|"'.,:;]{8,}$''')
+    re2 = re.compile(r'''^[-A-ZА-Яa-zа-я\d~!?@#$%^&*_+()\[\]{}></\\|"'.,:;]{,128}$''')
+    re3 = re.compile(r'''^(?=.*?[a-zа-я])(?=.*?[A-ZА-Я]).*$''')
+    re4 = re.compile(r'''^(?=.*?[0-9]).*$''')
+    re6 = re.compile(r'''^(?=.*?[-~!?@#$%^&*_+()\[\]{}><\/\\|"'.,:;]{0,}).*$''')
+    error = []
+    if not re1.match(password):
+        error.append("Пароль должен быть не менее 8 символов")
+    if not re2.match(password):
+        error.append("Пароль должен быть не более 128 символов")
+    if not re3.match(password):
+        error.append("В пароле должны быть как минимум одна заглавная и одна строчная буква,а также только латинские или кириллические буквы")
+    if not re4.match(password):
+        error.append("В пароле должны быть как минимум одна цифра и только арабские цифры")
+    if password.find(' ') != -1:
+        error.append("Пароль должен быть без пробелов")
+    if not re6.match(password):
+        error.append(r'''Другие допустимые символы:~ ! ? @ # $ % ^ & * _ - + ( ) [ ] { } > < / \ | " ' . , : ;''')
+    return "; ".join(error) + '.' if len(error) > 0 else ''
 
 
 def login_validation(login: str) -> bool:
@@ -45,44 +58,37 @@ def login_validation(login: str) -> bool:
 
 def validate(login: str, password: str, last_name: str, first_name: str) -> Dict[str, str]:
     errors = {}
-    if not password_validation(password):
+    error = password_validation(password)
+    if len(error) != 0:
         errors['p_class'] = "is-invalid"
         errors['p_message_class'] = "invalid-feedback"
-        errors['p_message'] = '''Пароль не удовлетворяет одному из следующих требований:
-        не менее 8 символов;
-        не более 128 символов;
-        как минимум одна заглавная и одна строчная буква;
-        только латинские или кириллические буквы;
-        как минимум одна цифра;
-        только арабские цифры;
-        без пробелов;
-        Другие допустимые символы:~ ! ? @ # $ % ^ & * _ - + ( ) [ ] { } > < / \ | " ' . , : ;'''
+        errors['p_message'] = error
     if not login_validation(login):
         errors['l_class'] = "is-invalid"
         errors['l_message_class'] = "invalid-feedback"
-        errors['l_message'] = "В логине должны быть только латинские буквы, а также цифры. Его длина должна быть не менее 5 символов"
-    if len(login):
+        errors['l_message'] = "Логин должен состоять только из латинских букв и цифр и иметь длину не менее 5 символов"
+    if len(login) == 0:
         errors['l_class'] = "is-invalid"
         errors['l_message_class'] = "invalid-feedback"
-        errors['l_message'] = "Заполните поле логина"
-    if len(password):
+        errors['l_message'] = "Логин не должен быть пустым"
+    if len(password) == 0:
         errors['p_class'] = "is-invalid"
         errors['p_message_class'] = "invalid-feedback"
-        errors['p_message'] = "Заполните поле пароля"
-    if len(last_name):
+        errors['p_message'] = "Пароль не должен быть пустым"
+    if len(last_name) == 0:
         errors['ln_class'] = "is-invalid"
         errors['ln_message_class'] = "invalid-feedback"
-        errors['ln_message'] = "Заполните поле фамилии"
-    if len(first_name):
+        errors['ln_message'] = "Фамилия не должна быть пустой"
+    if len(first_name) == 0:
         errors['fn_class'] = "is-invalid"
         errors['fn_message_class'] = "invalid-feedback"
-        errors['fn_message'] = "Заполните поле имени"
+        errors['fn_message'] = "Имя не должно быть пустым"
     return errors
 
 
 @login_manager.user_loader
 def load_user(user_id):
-    query = 'SELECT * FROM users2 WHERE users2.id=%s'
+    query = 'SELECT * FROM users WHERE users.id=%s'
     cursor = db.connection().cursor(named_tuple=True)
     cursor.execute(query, (user_id,))
     user = cursor.fetchone()
@@ -96,14 +102,13 @@ def load_user(user_id):
 def index():
     return render_template('index.html')
 
-
 @app.route('/login', methods = ['POST', 'GET'])
 def login():
     if request.method == 'POST':
         login = request.form['login']
         password = request.form['password']
         check = request.form.get('secretcheck') == 'on'
-        query = 'SELECT * FROM users2 WHERE users2.login=%s AND users2.password_hash=SHA2(%s,256)'
+        query = 'SELECT * FROM users WHERE users.login=%s AND users.password_hash=%s'
         cursor = db.connection().cursor(named_tuple=True)
         cursor.execute(query, (login, password))
         user = cursor.fetchone()
@@ -114,45 +119,58 @@ def login():
             flash('Вы успешно вошли!', 'success')
             return redirect(param_url or url_for('index'))
         flash('Ошибка входа!', 'danger')
-    return render_template('login.html')
-
+    return render_template('login.html' )
 
 @app.route('/logout', methods = ['GET'])
-def logout():
+def logout():   
     logout_user()
     return redirect(url_for('index'))
-
 
 @app.route('/users/')
 @login_required
 def show_users():
-    query = 'SELECT * FROM users2'
+    query = '''
+        SELECT users.*, roles.name as role_name
+        FROM users
+        LEFT JOIN roles
+        on roles.id = users.role_id
+        '''
     cursor = db.connection().cursor(named_tuple=True)
     cursor.execute(query)
     users = cursor.fetchall()
     cursor.close()
     return render_template('users/index.html',users=users)
 
+def get_roles():
+    query = 'SELECT * FROM roles'
+    cursor = db.connection().cursor(named_tuple=True)
+    cursor.execute(query)
+    roles = cursor.fetchall()
+    cursor.close()
+    return roles
 
 @app.route('/users/create', methods = ['POST', 'GET'])
 @login_required
 def create():
+    roles = get_roles()
     if request.method == 'POST':
         login = request.form['login']
         first_name = request.form['first_name']
         last_name = request.form['last_name']
         middle_name = request.form['middle_name']
-        password = request.form['password']
+        password = request.form['oldpassword']
+        role_id = request.form['role_id']
         errors = validate(login, password, last_name, first_name)
-        if len(errors.keys()) > 0:
+        if errors:
             return render_template('users/create.html', **errors)
+
         try:
             query = '''
-                insert into users2 (login, last_name, first_name, middle_name, password_hash)
-                VALUES (%s, %s, %s, %s, SHA2(%s, 256))
+                INSERT INTO users (login, last_name, first_name, middle_name, password_hash, role_id)
+                VALUES (%s, %s, %s, %s, %s, %s)
                 '''
             cursor = db.connection().cursor(named_tuple=True)
-            cursor.execute(query, (login, last_name, first_name, middle_name, password))
+            cursor.execute(query, (login, last_name, first_name, middle_name, password, role_id))
             db.connection().commit()
             flash(f'Пользователь {login} успешно создан.', 'success')
             cursor.close()
@@ -161,30 +179,31 @@ def create():
             flash(f'При создании пользователя произошла ошибка.', 'danger')
             return render_template('users/create.html')
         
-    return render_template('users/create.html')
-
+    return render_template('users/create.html', roles=roles)
 
 @app.route('/users/show/<int:user_id>') 
 def show_user(user_id):
-    query = 'SELECT * FROM users2 WHERE users2.id=%s'
-    with db.connection().cursor(named_tuple=True) as cursor:
-        cursor.execute(query, (user_id,))
-        user = cursor.fetchone()
+    query = 'SELECT users.*, roles.name AS role_name FROM users LEFT JOIN roles ON users.role_id = roles.id WHERE users.id=%s'
+    cursor = db.connection().cursor(named_tuple=True)
+    cursor.execute(query, (user_id,))
+    user = cursor.fetchone()
+    cursor.close()
     return render_template('users/show.html', user=user)
-
 
 @app.route('/users/edit/<int:user_id>', methods=["POST", "GET"])
 def edit(user_id):
+    roles = get_roles()
+    cursor = db.connection().cursor(named_tuple=True)
     if request.method == 'POST':
         first_name = request.form['first_name']
         last_name = request.form['last_name']
         middle_name = request.form['middle_name']
+        role_id = request.form['role_id']
         try:
             query = '''
-                UPDATE users2 set first_name = %s, last_name = %s, middle_name = %s where id = %s
+                UPDATE users SET last_name = %s, first_name = %s, middle_name = %s, role_id = %s where id = %s
                 '''
-            cursor = db.connection().cursor(named_tuple=True)
-            cursor.execute(query, (first_name, last_name, middle_name, user_id))
+            cursor.execute(query, (last_name, first_name, middle_name, role_id, user_id))
             db.connection().commit()
             flash(f'Данные пользователя {first_name} успешно обновлены.', 'success')
             cursor.close()
@@ -193,12 +212,18 @@ def edit(user_id):
             flash(f'При обновлении пользователя произошла ошибка.', 'danger')
             return render_template('users/edit.html')
 
-    query = 'SELECT  * FROM users2 WHERE users2.id=%s'
-    with db.connection().cursor(named_tuple=True) as cursor:
-        cursor.execute(query, (user_id,))
-        user = cursor.fetchone()
-    return render_template('users/edit.html', user=user)
-
+    query = '''
+        SELECT users.*, roles.name as role_name
+        FROM users
+        LEFT JOIN roles
+        on roles.id = users.role_id
+        where users.id=%s
+        '''
+    cursor = db.connection().cursor(named_tuple=True)
+    cursor.execute(query, (user_id,))
+    user = cursor.fetchone()
+    cursor.close()
+    return render_template('users/edit.html', user=user, roles=roles)
 
 @app.route('/users/delete/')
 @login_required
@@ -206,7 +231,7 @@ def delete():
     try:
         user_id = request.args.get('user_id')
         query = '''
-            DELETE from users2 where id = %s
+            DELETE from users where id = %s
             '''
         cursor = db.connection().cursor(named_tuple=True)
         cursor.execute(query, (user_id,))
@@ -220,49 +245,48 @@ def delete():
 
     return redirect(url_for('show_users'))
 
-
-@app.route('/pass_change', methods=["POST", "GET"])
+@app.route('/users/change/', methods=["POST", "GET"])
 @login_required
 def change():
     if request.method == "POST":
         user_id = current_user.id
-        password = request.form['password']
-        n_password = request.form['n_password']
-        n_password_2 = request.form['n2_password']
-        query = '''
-            SELECT * FROM `users2` WHERE id = %s and password_hash = SHA2(%s, 256)
-            '''
+        oldpassword = request.form['oldpassword']
+        newpassword = request.form['newpassword']
+        newpassword2 = request.form['newpassword2']
+        query = 'SELECT * FROM users WHERE id = %s and password_hash = %s'
         user = None
+        errors = validate('login', newpassword, 'name', 'name')
         try:
-            with db.connection().cursor(named_tuple=True) as cursor:
-                cursor.execute(query, (user_id, password))
-                user = cursor.fetchone()
+            cursor = db.connection().cursor(named_tuple=True)
+            cursor.execute(query, (user_id, oldpassword))
+            user = cursor.fetchone()
+            cursor.close()
         except mysql.connector.errors.DatabaseError:
             db.connection().rollback()
-            flash(f'При проверке старого пароля возникла ошибка.', 'danger')
+            flash(f'Возникла ошибка при проверке пароля', 'danger')
             return render_template('users/change.html')
         if not user:
-            flash(f'Старый пароль не соответствует текущему', 'danger')
+            flash(f'Неправильный пароль', 'danger')
             return render_template('users/change.html')
-        elif not password_validation(n_password):
-            flash(f'Новый пароль не соответствует требованиям', 'danger')
-            return render_template('users/change.html')
-        elif n_password != n_password_2:
+        elif errors:
+            if len(errors.keys()) > 0:
+                flash(errors['p_message'], 'danger')
+                return render_template('users/change.html')
+        elif newpassword != newpassword2:
             flash(f'Пароли не совпадают', 'danger')
             return render_template('users/change.html')
         else:
-            query = '''
-                UPDATE `users2` SET password_hash = SHA2(%s, 256) where id = %s
-                '''
+            query = 'UPDATE users SET password_hash = %s WHERE id = %s'
             try:
-                with db.connection().cursor(named_tuple=True) as cursor:
-                    cursor.execute(query, (n_password, user_id))
-                    db.connection().commit()
-                flash(f'Пароль успешно обновлен.', 'success')
+                cursor = db.connection().cursor(named_tuple=True)
+                cursor.execute(query, (newpassword, user_id))
+                db.connection().commit()
+                cursor.close()
+                flash(f'Пароль обновлен', 'success')
                 return redirect(url_for('index'))
             except mysql.connector.errors.DatabaseError:
                 db.connection().rollback()
-                flash(f'При обновлении пароля возникла ошибка.', 'danger')
+                flash(f'Ошибка при обновлении пароля', 'danger')
                 return render_template('users/change.html')
     else:
         return render_template('users/change.html')

@@ -9,6 +9,7 @@
                 <th scope="col">Имя</th>
                 <th scope="col">Фамилия</th>
                 <th scope="col">Отчество</th>
+                <th scope="col">Роль</th>
                 <th scope="col">Действия</th>
               </tr>
             </thead>
@@ -16,8 +17,8 @@
               {% for user in users %}
               <tr>
                 <th scope="row">{{user.login}}</th>
-                <td>{{user.first_name}}</td>
                 <td>{{user.last_name}}</td>
+                <td>{{user.first_name}}</td>
                 <td>
                   {% if user.middle_name %}
                     {{user.middle_name}}
@@ -26,11 +27,30 @@
                 <td>
                   <a class="btn btn-dark" href="{{url_for('show_user', user_id=user.id)}}">Просмотр</a>
                   <a class="btn btn-dark" href="{{url_for('edit', user_id=user.id)}}">Редактирование</a>
+                  <a class="btn btn-danger delete" data-bs-toggle="modal" data-bs-target="#deleteModal_{{user.id}}">Удалить</a>
+                  <!--Модальное окно удаления пользователя-->
+                  <div class="modal fade" id="deleteModal_{{user.id}}" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <!-- Заголовок модального окна -->
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="deleteModalLabel">Удаление пользователя</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="mx-auto my-5">Вы уверены, что хотите удалить пользователя {{user.last_name}} {{user.first_name}}?</div>
+                            <!-- Футер модального окна -->
+                            <div class="modal-footer">
+                                <a type="button" class="btn btn-danger" href="{{url_for('delete', user_id=user.id)}}">Уверен</a>
+                                <a type="button" class="btn btn-dark" data-bs-dismiss="modal">Не уверен</a>
+                            </div>
+                        </div>
+                    </div>
+                  </div>
                   <a class="btn btn-danger" href="{{url_for('delete', user_id=user.id)}}">Удаление</a>
-                </td>
+                </td>                
               </tr>
               {% endfor %}
             </tbody>
-          </table>
+        </table>
     </div>
 {% endblock %}
