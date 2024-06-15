@@ -12,8 +12,28 @@ def init_login_manager(app):
     login_manager.user_loader(load_user)
     login_manager.init_app(app)
 
-def load_user(user_id):
-    user = db.session.execute(db.select(User).filter_by(id=user_id)).scalar()
+def load_user(id_user):
+    user = db.session.execute(db.select(User).filter_by(id=id_user)).scalar()
     return user
+                                                            
+@bp.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        login = request.form.get('login')
+        password = request.form.get('password')
+        if login and password:
+            user = db.session.execute(db.select(User).filter_by(login=login)).scalar()
+            if user and user.check_password(password):
+                login_user(user)
+                flash('Вы успешно аутентифицированы.', 'success')
+                next = request.args.get('next')
+                return redirect(next or url_for('index'))
+        flash('Введены неверные логин и/или пароль.', 'danger')
+    return render_template('auth/login.html')
 
-# добавить блупринты
+
+@bp.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for('index'))

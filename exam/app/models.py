@@ -1,10 +1,11 @@
-from datetime import datetime
-from werkzeug.security import check_password_hash, generate_password_hash
 from flask_login import UserMixin
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import String, ForeignKey, DateTime, Text, Integer, MetaData
 from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy import String, ForeignKey, DateTime, Text, Integer, MetaData
+from sqlalchemy.dialects.mysql.types import YEAR
+from datetime import datetime
+from werkzeug.security import check_password_hash, generate_password_hash
 
 ID_ADMIN = 1
 ID_MODERATOR = 2
@@ -40,20 +41,20 @@ class User(Base, UserMixin):
     middle_name: Mapped[str] = mapped_column(String(256), nullable=True)
     id_roles: Mapped[int] = mapped_column(Integer, ForeignKey('roles.id'))
 
-    def admin(self) -> bool:
-        return self.roles_id == ID_ADMIN
+    def administrator(self) -> bool:
+        return self.id_roles == ID_ADMIN
 
-    def moder(self) -> bool:
-        return self.roles_id == ID_MODERATOR
+    def moderator(self) -> bool:
+        return self.id_roles == ID_MODERATOR
 
-    def can(self, action: str) -> bool:
-        if self.roles_id:
+    def capability(self, action: str) -> bool:
+        if self.id_roles:
             if action == 'create':
-                return self.admin()
+                return self.administrator()
             elif action == 'edit':
-                return self.admin() or self.moder()
+                return self.administrator() or self.moderator()
             elif action == 'delete':
-                return self.admin()
+                return self.administrator()
             elif action == 'show':
                 return True
         return False
@@ -74,13 +75,13 @@ class Book(Base):
     id = mapped_column(Integer, primary_key=True) 
     name: Mapped[str] = mapped_column(String(100), nullable=False) 
     short_description: Mapped[str] = mapped_column(Text, nullable=False) 
-    year_of_creation: Mapped[datetime] = mapped_column(DateTime, nullable=False) 
+    year_of_creation: Mapped[int] = mapped_column(YEAR, nullable=False)
     publish_company: Mapped[str] = mapped_column(String(100), nullable=False) 
     author: Mapped[str] = mapped_column(String(100), nullable=False) 
     page_amount: Mapped[int] = mapped_column(nullable=False) 
     rating_sum: Mapped[int] = mapped_column(default=0) 
     amount_of_rates: Mapped[int] = mapped_column(default=0) 
-    id_cover: Mapped[int] = mapped_column(Integer, ForeignKey("cover.id", ondelete="RESTRICT")) 
+    id_cover: Mapped[int] = mapped_column(String(256), ForeignKey("covering.id", ondelete="RESTRICT")) 
  
     @property 
     def rating(self): 
@@ -102,9 +103,9 @@ class GenresofBooks(Base):
 
 
 class Cover(Base):
-    __tablename__ = 'cover'
+    __tablename__ = 'covering'
 
-    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id: Mapped[int] = mapped_column(String(256), primary_key=True)
     filename: Mapped[str] = mapped_column(String(256), nullable=False)
     file_type: Mapped[str] = mapped_column(String(256), nullable=False)
     md5_hash: Mapped[str] = mapped_column(String(256), nullable=False)
