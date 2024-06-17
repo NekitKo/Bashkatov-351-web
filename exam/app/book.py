@@ -4,15 +4,16 @@ from sqlalchemy.exc import SQLAlchemyError
 from models import db, Genre, GenresofBooks,Feedback, Book, Cover
 from tools import SaveCover
 import bleach
+from auth import check_rights
 
 bp = Blueprint('book', __name__, url_prefix='/book')
 
 
-@bp.route('/new')
-def new():
+@bp.route('/addition')
+def addition():
     genres = db.session.execute(db.select(Genre)).scalars()
     return render_template(
-        'book/new.html',
+        'book/addition.html',
         genres=genres
         )
 
@@ -26,13 +27,14 @@ def feedback(id_book):
 
 @bp.route('/create', methods=['POST'])
 @login_required
+@check_rights('create')
 def create():  
     if request.method == "POST":
         name = request.form['name']
         author = request.form['author']
-        year_of_creation = request.form['created']
+        year_of_creation = request.form['written']
         publish_company = request.form['publish_company']
-        page_amount = int(request.form['pagescount'])
+        page_amount = int(request.form['pageamount'])
         short_description = bleach.clean(request.form['short_description'])
         genres = request.form.getlist('genres')
         background_img = request.files['background_img']
@@ -54,7 +56,7 @@ def create():
             
             if not genres:
                 flash('Выберите жанр', 'warning')
-                return render_template('new.html', genres=db.session.query(Genre).all())
+                return render_template('addition.html', genres=db.session.query(Genre).all())
             
             for id_genre in genres:
                 genre = db.session.query(Genre).get(id_genre)
@@ -72,7 +74,7 @@ def create():
         except Exception as err:
             db.session.rollback()
             flash(f'Ошибка добавления книги в базу: {err}', 'danger')
-            return render_template('book/new.html', genres=db.session.query(Genre).all())
+            return render_template('book/addition.html', genres=db.session.query(Genre).all())
 
 @bp.route('/show/<int:id_book>', methods=['GET', 'POST'])
 @login_required
@@ -116,6 +118,7 @@ def add_review(id_book):
 
 @bp.route('/edit/<int:id_book>', methods=["GET", "POST"])
 @login_required
+@check_rights('edit')
 def edit(id_book):
     book = db.session.query(Book).get_or_404(id_book)
     commongenres = db.session.query(Genre).all()
@@ -124,9 +127,9 @@ def edit(id_book):
         try:
             book.name = request.form['name']
             book.author = request.form['author']
-            book.year_of_creation = request.form['created']
+            book.year_of_creation = request.form['written']
             book.publish_company = request.form['publish_company']
-            book.page_amount = int(request.form['pagescount'])
+            book.page_amount = int(request.form['pageamount'])
             book.short_description = bleach.clean(request.form['short_description'])
             genres = request.form.getlist('genres')
             db.session.query(GenresofBooks).filter_by(id_book=book.id).delete()
@@ -157,6 +160,7 @@ def edit(id_book):
 
 @bp.route('/<int:id_book>/delete', methods=["GET", "POST"])
 @login_required
+@check_rights('delete')
 def delete(id_book):
     book = db.session.execute(db.select(Book).filter_by(id=id_book)).scalars().first()
     cover = db.session.execute(db.select(Cover).filter_by(id=book.id_cover)).scalars().first()
@@ -166,9 +170,9 @@ def delete(id_book):
         db.session.delete(book)
         db.session.delete(cover)
         db.session.commit()
-        SaveCover.drop_skin(nameofcover)
+        SaveCover.drop_cover(nameofcover)
     except SQLAlchemyError as err:
-        flash(f'Ошибка удаление книги: {err}', 'danger')
+        flash(f'Ошибка удаления книги: {err}', 'danger')
         return redirect(url_for('index')) 
     
     return redirect(url_for('index'))

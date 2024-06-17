@@ -15,7 +15,7 @@
 
 <body class="d-flex flex-column h-100">
     <header>
-        <nav class="navbar navbar-dark bg-dark">
+        <nav class="navbar navbar-dark bg-danger">
             <div class="container-fluid">
                 <div class="logo navbar-brand">
                     <a href="{{ url_for('index') }}">
@@ -29,11 +29,11 @@
                             <span style="color: #fff; cursor: pointer; white-space: nowrap;">{{ current_user.full_name }}</span>
                         </div>
                         <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                            <a class="dropdown-item" href="{{ url_for('auth.logout') }}">Выйти</a>
+                            <a class="dropdown-item btn-secondary" href="{{ url_for('auth.logout') }}">Выйти</a>
                         </div>
                     </div>
                 {% else %}
-                    <a class="btn btn-outline-light" href="{{ url_for('auth.login') }}">Войти</a>
+                    <a class="btn btn-outline-light btn-success" href="{{ url_for('auth.login') }}">Войти</a>
                 {% endif %}
             </div>
         </nav>
@@ -55,7 +55,7 @@
        {% endblock %}
     </main>
 
-    <footer class="bg-dark text-white d-flex align-items-center justify-content-center py-3">
+    <footer class="bg-danger text-white d-flex align-items-center justify-content-center py-3">
         Башкатов Никита Валерьевич 221-351
     </footer>
 

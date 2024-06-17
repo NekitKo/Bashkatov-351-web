@@ -18,10 +18,12 @@ class SaveCover:
         self.img = Cover(
             id=str(uuid.uuid4()),
             filename=filename,
-            file_type=self.file.filetype,
+            file_type=self.file.mimetype,
             md5_hash=self.md5_hash)
         
-        self.file.save(os.path.join(current_app.config['UPLOAD_FOLDER'], self.img.storage_filename))
+        filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
+        os.makedirs(os.path.dirname(filepath), exist_ok=True)
+        self.file.save(filepath)
         db.session.add(self.img)
         db.session.commit()
         return self.img
@@ -30,23 +32,13 @@ class SaveCover:
         self.md5_hash = hashlib.md5(self.file.read()).hexdigest()
         self.file.seek(0)
         return db.session.execute(db.select(Cover).filter(Cover.md5_hash == self.md5_hash)).scalar()
-
+    def drop_cover(cover):
+        os.remove(os.path.join(current_app.config['UPLOAD_FOLDER'],cover))
 
 class FilterofBooks:
-    def __init__(self, name=None, id_genre=None):
-        self.name = name
-        self.id_genre = id_genre
-        self.query = db.select(Book)
-
-    def perform(self):
-        self.__filter_by_name()
-        self.__filter_by_category_ids()
-        return self.query.order_by(Book.year_of_creation.desc())
-
-    def __filter_by_name(self):
-        if self.name:
-            self.query = self.query.filter(Book.name.ilike('%' + self.name + '%'))
-
-    def __filter_by_category_ids(self):
-        if self.id_genre:
-            self.query = self.query.filter(GenresofBooks.id_genre.in_(self.id_genre))
+    def __init__(self):
+        self.bookquery = db.select(Book)
+        self.genrequery = db.select(GenresofBooks)
+    
+    def find(self):
+        return self.bookquery.order_by(Book.year_of_creation.desc())

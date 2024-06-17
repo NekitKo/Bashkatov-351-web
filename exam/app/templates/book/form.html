@@ -17,16 +17,16 @@
                     <input class="form-control" type="text" name="author" id="author" value="{{ book.author or '' }}" required>
                 </div>
                 <div class="mb-3">
-                    <label for="created">Год написания</label>
-                    <input class="form-control" type="text" name="created" id="created" value="{{ book.year_of_creation or '' }}" required>
+                    <label for="written">Год написания</label>
+                    <input class="form-control" type="text" name="written" id="written" value="{{ book.year_of_creation or '' }}" required>
                 </div>
                 <div class="mb-3">
                     <label for="publish_company">Издательство</label>
                     <input class="form-control" type="text" name="publish_company" id="publish_company" value="{{ book.publish_company or '' }}" required>
                 </div>
                 <div class="mb-3">
-                    <label for="pagescount">Количество страниц</label>
-                    <input class="form-control" type="text" name="pagescount" id="pagescount" value="{{ book.page_amount or '' }}" required>
+                    <label for="pageamount">Количество страниц</label>
+                    <input class="form-control" type="text" name="pageamount" id="pageamount" value="{{ book.page_amount or '' }}" required>
                 </div>
                 <div class="mb-3 d-flex flex-column flex-grow-1">
                     <label for="short_description">Синопсис</label>
