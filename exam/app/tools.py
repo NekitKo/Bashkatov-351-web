@@ -18,12 +18,10 @@ class SaveCover:
         self.img = Cover(
             id=str(uuid.uuid4()),
             filename=filename,
-            file_type=self.file.mimetype,
+            file_type=self.file.filetype,
             md5_hash=self.md5_hash)
         
-        filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], filename)
-        os.makedirs(os.path.dirname(filepath), exist_ok=True)
-        self.file.save(filepath)
+        self.file.save(os.path.join(current_app.config['UPLOAD_FOLDER'], self.img.storage_filename))
         db.session.add(self.img)
         db.session.commit()
         return self.img
@@ -32,33 +30,23 @@ class SaveCover:
         self.md5_hash = hashlib.md5(self.file.read()).hexdigest()
         self.file.seek(0)
         return db.session.execute(db.select(Cover).filter(Cover.md5_hash == self.md5_hash)).scalar()
-    def drop_skin(Cover):
-        os.remove(os.path.join(current_app.config['UPLOAD_FOLDER'],Cover))
 
 
 class FilterofBooks:
-    def __init__(self):
-        self.bookquery = db.select(Book)
-        self.genrequery = db.select(GenresofBooks)
-    
-    def find(self, name='', genres_search='', years_search='', kol_from='', kol_to='', author=''):
-        if name != '':
-            self.bookquery = self.bookquery.filter(Book.name.ilike(f'%{name}%'))
-        
-        if genres_search != '':
-            self.genrequery = self.genrequery.filter(GenresofBooks.id_genre.in_(genres_search))
+    def __init__(self, name, id_genre):
+        self.name = name
+        self.id_genre = id_genre
+        self.query = db.select(Book)
 
-        if years_search != '':
-            years_search = [int(i) for i in years_search]
-            self.bookquery = self.bookquery.filter(Book.year_of_creation.in_(years_search))
-        
-        if kol_from != '':
-            self.bookquery = self.bookquery.filter(Book.page_amount >= int(kol_from))
+    def perform(self):
+        self.__filter_by_name()
+        self.__filter_by_category_ids()
+        return self.query.order_by(Book.created_at.desc())
 
-        if kol_to != '':
-            self.bookquery = self.bookquery.filter(Book.page_amount <= int(kol_to))
-        
-        if author != '':
-            self.bookquery = self.bookquery.filter(Book.author.ilike(f'%{author}%'))
-        
-        return self.bookquery.order_by(Book.year_of_creation.desc())
+    def __filter_by_name(self):
+        if self.name:
+            self.query = self.query.filter(Book.name.ilike('%' + self.name + '%'))
+
+    def __filter_by_category_ids(self):
+        if self.id_genre:
+            self.query = self.query.filter(GenresofBooks.id_genre.in_(self.id_genre))
