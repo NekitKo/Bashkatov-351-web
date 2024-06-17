@@ -25,7 +25,7 @@ app.register_blueprint(book_bp)
 def index():
     genres = db.session.execute(db.select(Genre)).scalars().all()
     books = db.session.execute(db.select(Book)).scalars().all()
-    books = FilterofBooks().find()
+    books = FilterofBooks().perform()
     pagination = db.paginate(books, per_page=10)
     books = pagination.items
     return render_template(
