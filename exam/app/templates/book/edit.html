@@ -1,0 +1,7 @@
+{% extends 'base.html' %}
+{% from 'book/form.html' import book_form %}
+{% block content %}
+<div class="container">
+    {{ book_form(url_for('book.edit', id_book=book.id), book=book, genres=genres) }}
+</div>
+{% endblock %}
