@@ -41,13 +41,13 @@ class User(Base, UserMixin):
     id_roles: Mapped[int] = mapped_column(Integer, ForeignKey('roles.id'))
 
     def admin(self) -> bool:
-        return self.roles_id == ID_ADMIN
+        return self.id_roles == ID_ADMIN
 
     def moder(self) -> bool:
-        return self.roles_id == ID_MODERATOR
+        return self.id_roles == ID_MODERATOR
 
     def can(self, action: str) -> bool:
-        if self.roles_id:
+        if self.id_roles:
             if action == 'create':
                 return self.admin()
             elif action == 'edit':
@@ -80,7 +80,7 @@ class Book(Base):
     page_amount: Mapped[int] = mapped_column(nullable=False) 
     rating_sum: Mapped[int] = mapped_column(default=0) 
     amount_of_rates: Mapped[int] = mapped_column(default=0) 
-    id_cover: Mapped[int] = mapped_column(Integer, ForeignKey("cover.id", ondelete="RESTRICT")) 
+    id_cover: Mapped[int] = mapped_column(Integer, ForeignKey("covering.id", ondelete="RESTRICT")) 
  
     @property 
     def rating(self): 
@@ -102,7 +102,7 @@ class GenresofBooks(Base):
 
 
 class Cover(Base):
-    __tablename__ = 'cover'
+    __tablename__ = 'covering'
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     filename: Mapped[str] = mapped_column(String(256), nullable=False)

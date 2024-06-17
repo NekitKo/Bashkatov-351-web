@@ -32,13 +32,13 @@ class SaveCover:
         self.md5_hash = hashlib.md5(self.file.read()).hexdigest()
         self.file.seek(0)
         return db.session.execute(db.select(Cover).filter(Cover.md5_hash == self.md5_hash)).scalar()
-    def drop_cover(cover):
-        os.remove(os.path.join(current_app.config['UPLOAD_FOLDER'],cover))
+    def drop_cover(covering):
+        os.remove(os.path.join(current_app.config['UPLOAD_FOLDER'],covering))
 
 class FilterofBooks:
     def __init__(self):
         self.bookquery = db.select(Book)
         self.genrequery = db.select(GenresofBooks)
     
-    def find(self):
+    def distribution(self):
         return self.bookquery.order_by(Book.year_of_creation.desc())
