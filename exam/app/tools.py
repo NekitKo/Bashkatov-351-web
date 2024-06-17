@@ -33,7 +33,7 @@ class SaveCover:
 
 
 class FilterofBooks:
-    def __init__(self, name, id_genre):
+    def __init__(self, name=None, id_genre=None):
         self.name = name
         self.id_genre = id_genre
         self.query = db.select(Book)
