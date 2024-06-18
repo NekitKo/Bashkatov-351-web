@@ -69,7 +69,7 @@ def create():
             
             db.session.commit()
             flash('Книга успешно добавлена', 'success')
-            return redirect(url_for('index'))
+            return redirect(url_for('book.show', id_book=book.id))
         
         except Exception as err:
             db.session.rollback()
@@ -78,7 +78,7 @@ def create():
 
 @bp.route('/show/<int:id_book>', methods=['GET', 'POST'])
 @login_required
-def show(id_book):   
+def show(id_book):
     book = db.session.query(Book).get_or_404(id_book)
     genres = db.session.query(Genre).join(GenresofBooks).filter(GenresofBooks.id_book == book.id).all()
     feedback = db.session.query(Feedback).filter_by(id_book=id_book, id_user=current_user.id).first()
@@ -173,6 +173,7 @@ def delete(id_book):
         SaveCover.drop_cover(nameofcover)
     except SQLAlchemyError as err:
         flash(f'Ошибка удаления книги: {err}', 'danger')
+        db.session.rollback()
         return redirect(url_for('index')) 
     
     return redirect(url_for('index'))
